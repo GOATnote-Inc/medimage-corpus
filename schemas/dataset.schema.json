@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/GOATnote-Inc/medimage-corpus/schemas/dataset.schema.json",
+  "title": "MedImageCorpusDatasetEntry",
+  "description": "One manifest line: registry entry for a medical imaging dataset.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "name",
+    "modality",
+    "anatomy",
+    "task_types",
+    "size_bytes",
+    "license",
+    "access_tier",
+    "access_url",
+    "download_method",
+    "year",
+    "agent_notes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_\\-\\.]*$",
+      "description": "Stable lowercase slug; modality prefix optional but recommended."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "modality": {
+      "type": "string",
+      "enum": ["CT", "XR", "MRI", "US", "MULTI"]
+    },
+    "anatomy": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      ]
+    },
+    "task_types": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "size_bytes": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1
+    },
+    "access_tier": {
+      "type": "string",
+      "enum": ["open", "registration", "credentialed", "application"]
+    },
+    "access_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^(https?|s3|gs)://"
+    },
+    "download_method": {
+      "type": "string",
+      "enum": [
+        "https",
+        "s3",
+        "aws-open-data",
+        "tcia-cli",
+        "hf",
+        "kaggle",
+        "physionet",
+        "synapse",
+        "openneuro",
+        "nih-box",
+        "aspera",
+        "zenodo",
+        "gcs",
+        "stanford-aimi",
+        "github-release",
+        "application"
+      ]
+    },
+    "download_url": {
+      "type": ["string", "null"]
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1980,
+      "maximum": 2100
+    },
+    "agent_notes": {
+      "type": "string",
+      "maxLength": 250
+    },
+    "mri_sequences": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "us_view": {
+      "type": "string"
+    },
+    "image_modalities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "num_pairs": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "text_type": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      ]
+    },
+    "splits": {
+      "type": "object"
+    },
+    "citations": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

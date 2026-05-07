@@ -1,0 +1,99 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Virtualenvs ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- Editor / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# --- Node ---
+node_modules/
+
+# --- Data and downloads (medical imaging is large; keep registry only) ---
+data/
+_downloads/
+_extract/
+_scratch/
+_tmp/
+cache/
+*.tar
+*.tar.gz
+*.tar.zst
+*.zip
+*.7z
+*.rar
+
+# Imaging primaries
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.mha
+*.mhd
+*.nrrd
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.lmdb
+*.parquet
+*.arrow
+*.zarr/
+*.lance/
+
+# Video / media (echo, US, microscopy)
+*.avi
+*.mp4
+*.mov
+*.mkv
+
+# WebDataset shards
+*.tar.shard
+
+# Logs
+*.log
+logs/
+
+# Allow tiny test fixtures (override exclusions)
+!tests/fixtures/**/*.dcm
+!tests/fixtures/**/*.nii.gz
+!tests/fixtures/**/*.png
+!tests/fixtures/**/*.jpg
+
+# Secrets and credentials (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kaggle.json
