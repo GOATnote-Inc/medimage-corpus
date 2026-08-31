@@ -53,7 +53,7 @@ def main(manifests_dir: str | None, schema_path: str | None, out_path: str | Non
     sp = Path(schema_path) if schema_path else repo_root / "schemas" / "dataset.schema.json"
     out = Path(out_path) if out_path else md / "all.jsonl"
 
-    with open(sp, "r", encoding="utf-8") as fh:
+    with open(sp, encoding="utf-8") as fh:
         schema = json.load(fh)
 
     validator = jsonschema.Draft202012Validator(schema)
@@ -67,7 +67,7 @@ def main(manifests_dir: str | None, schema_path: str | None, out_path: str | Non
         if not p.exists():
             click.echo(f"info: {f} not present; skipping")
             continue
-        with open(p, "r", encoding="utf-8") as fh:
+        with open(p, encoding="utf-8") as fh:
             for ln, line in enumerate(fh, 1):
                 line = line.strip()
                 if not line:
@@ -83,6 +83,15 @@ def main(manifests_dir: str | None, schema_path: str | None, out_path: str | Non
                     invalid.append((f, ln, msg))
                     continue
                 rows.append(row)
+
+    # Duplicate ids are registry corruption: two rows claiming the same slug with
+    # potentially contradictory metadata. Always an error, even in lenient mode.
+    id_counts: Counter[str] = Counter(row.get("id", "?") for row in rows)
+    dup_ids = sorted(k for k, v in id_counts.items() if v > 1)
+    if dup_ids:
+        for d in dup_ids:
+            click.echo(f"DUPLICATE id: {d} appears {id_counts[d]} times", err=True)
+        raise SystemExit(f"error: {len(dup_ids)} duplicate id(s); one manifest row per dataset")
 
     if invalid:
         for f, ln, msg in invalid:

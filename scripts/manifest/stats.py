@@ -17,7 +17,7 @@ def _load_rows(manifest_dir: Path) -> list[dict]:
         p = manifest_dir / f
         if not p.exists():
             continue
-        with open(p, "r", encoding="utf-8") as fh:
+        with open(p, encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:

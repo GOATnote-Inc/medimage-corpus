@@ -25,6 +25,13 @@ SLUG_TO_COLLECTION: dict[str, str] = {
     "ct-colonography": "CT COLONOGRAPHY",
     "rider-pilot": "RIDER PHANTOM PET-CT",
     "rsna-2024-lumbar": "RSNA 2024 Lumbar Spine",
+    "nlst": "NLST",
+    "ldct-and-projection-data": "LDCT-and-Projection-data",
+    "fdg-pet-ct-lesions": "FDG-PET-CT-Lesions",
+    "ct-org": "CT-ORG",
+    "pancreatic-ct-cbct-seg": "Pancreatic-CT-CBCT-SEG",
+    "pancreas-ct": "Pancreas-CT",
+    "cbis-ddsm": "CBIS-DDSM",
 }
 
 TCIA_BASE = "https://services.cancerimagingarchive.net/services/v4/TCIA/query"

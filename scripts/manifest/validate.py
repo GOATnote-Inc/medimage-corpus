@@ -31,13 +31,13 @@ def main(jsonl_file: str, schema_path: str | None) -> None:
     repo_root = Path(__file__).resolve().parents[2]
     sp = Path(schema_path) if schema_path else repo_root / "schemas" / "dataset.schema.json"
 
-    with open(sp, "r", encoding="utf-8") as fh:
+    with open(sp, encoding="utf-8") as fh:
         schema = json.load(fh)
     validator = jsonschema.Draft202012Validator(schema)
 
     errors = 0
     valid = 0
-    with open(jsonl_file, "r", encoding="utf-8") as fh:
+    with open(jsonl_file, encoding="utf-8") as fh:
         for ln, line in enumerate(fh, 1):
             line = line.strip()
             if not line:

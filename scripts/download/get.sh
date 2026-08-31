@@ -107,16 +107,20 @@ if [[ "${lookup_json}" == "__NONE__" ]]; then
     exit 1
 fi
 
-# Extract fields with python (one-shot parse).
-read -r entry_id entry_modality download_method download_url access_url <<EOF
-$("${PYTHON_BIN}" -c "
+# Extract fields one at a time (word-split-safe: values may contain spaces).
+field() {
+    "${PYTHON_BIN}" -c "
 import json, sys
 r = json.loads(sys.argv[1])
-print(r.get('id',''), (r.get('modality','') or '').lower(),
-      r.get('download_method',''), r.get('download_url') or '',
-      r.get('access_url') or '')
-" "${lookup_json}")
-EOF
+v = r.get(sys.argv[2])
+sys.stdout.write('' if v is None else str(v))
+" "${lookup_json}" "$1"
+}
+entry_id="$(field id)"
+entry_modality="$(field modality | tr '[:upper:]' '[:lower:]')"
+download_method="$(field download_method)"
+download_url="$(field download_url)"
+access_url="$(field access_url)"
 
 if [[ -z "${entry_id}" || -z "${download_method}" ]]; then
     echo "error: manifest entry missing id or download_method" >&2
@@ -127,6 +131,62 @@ src_url="${download_url:-${access_url}}"
 if [[ -z "${src_url}" ]]; then
     echo "error: no download_url or access_url for id='${entry_id}'" >&2
     exit 1
+fi
+
+# Normalise the manifest URL into the shape the method's handler expects.
+# Manifests record human-facing URLs; handlers want repo ids / slugs / file roots.
+normalize_src() {
+    local method="$1" url="$2"
+    case "${method}" in
+        hf)
+            if [[ "${url}" == https://huggingface.co/datasets/* ]]; then
+                url="${url#https://huggingface.co/datasets/}"
+                url="${url%%\?*}"; url="${url%/}"
+            elif [[ "${url}" == http*://* ]]; then
+                echo "error: cannot derive a Hugging Face repo id from '${url}'" >&2
+                echo "       set download_url to a https://huggingface.co/datasets/<owner>/<name> URL in the manifest" >&2
+                return 1
+            fi
+            ;;
+        kaggle)
+            if [[ "${url}" == *kaggle.com/competitions/* ]]; then
+                local slug="${url#*kaggle.com/competitions/}"
+                slug="${slug%%/*}"; slug="${slug%%\?*}"
+                url="competition:${slug}"
+            elif [[ "${url}" == *kaggle.com/datasets/* ]]; then
+                local ref="${url#*kaggle.com/datasets/}"
+                ref="${ref%%\?*}"; ref="${ref%/}"
+                url="$(printf '%s' "${ref}" | cut -d/ -f1,2)"
+            fi
+            ;;
+        physionet)
+            if [[ "${url}" == https://physionet.org/content/* ]]; then
+                url="https://physionet.org/files/${url#https://physionet.org/content/}"
+            fi
+            [[ "${url}" == */ ]] || url="${url}/"
+            ;;
+        synapse)
+            if [[ "${url}" =~ (syn[0-9]+) ]]; then
+                url="${BASH_REMATCH[1]}"
+            fi
+            ;;
+        tcia-cli)
+            if [[ "${url}" == *cancerimagingarchive.net/collection/* ]]; then
+                local c="${url#*cancerimagingarchive.net/collection/}"
+                c="${c%%/*}"; c="${c%%\?*}"
+                url="${c}"
+            elif [[ "${url}" == http*://* ]]; then
+                echo "error: cannot derive a TCIA collection slug from '${url}'" >&2
+                echo "       run scripts/download/_tcia.py --collection <name> directly (see the dataset card)" >&2
+                return 1
+            fi
+            ;;
+    esac
+    printf '%s\n' "${url}"
+}
+
+if ! src_url="$(normalize_src "${download_method}" "${src_url}")"; then
+    exit 3
 fi
 
 if [[ -z "${target}" ]]; then
@@ -148,13 +208,25 @@ if [[ "${dry_run}" == "1" ]]; then
     exit 0
 fi
 
+# Landing pages are not downloads. When a direct-file method has no download_url,
+# refuse honestly instead of curling an HTML page into the data directory.
+case "${download_method}" in
+    https|zenodo|github-release)
+        if [[ -z "${download_url}" ]]; then
+            echo "error: id='${entry_id}' has no direct download_url; its access_url is a landing page." >&2
+            echo "       see docs/datasets/${entry_modality}/${entry_id}.md for manual steps." >&2
+            exit 3
+        fi
+        ;;
+esac
+
 mkdir -p "${target}"
 
 dispatch() {
     case "${download_method}" in
         https)
             bash "${SCRIPT_DIR}/_https.sh" "${src_url}" "${target}";;
-        s3)
+        s3|aws-open-data)
             bash "${SCRIPT_DIR}/_s3.sh" "${src_url}" "${target}";;
         openneuro)
             bash "${SCRIPT_DIR}/_openneuro.sh" "${src_url}" "${target}";;
@@ -178,7 +250,11 @@ dispatch() {
             exit 3;;
         nih-box|aspera|stanford-aimi)
             echo "error: '${download_method}' requires manual handling (browser auth or aspera client)." >&2
-            echo "       see docs/datasets/<dataset>.md for stepwise instructions." >&2
+            echo "       see docs/datasets/${entry_modality}/${entry_id}.md for stepwise instructions." >&2
+            exit 3;;
+        application)
+            echo "error: '${entry_id}' is application-tier: access requires an approved data-access request." >&2
+            echo "       see docs/datasets/${entry_modality}/${entry_id}.md and docs/ACCESS.md." >&2
             exit 3;;
         *)
             echo "error: no handler registered for download_method='${download_method}'" >&2
