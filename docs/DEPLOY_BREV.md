@@ -1,6 +1,6 @@
-# Deploying medimage-corpus on Brev
+# Deploying medimage-corpus on a GPU pod
 
-Brev pods (warm-lavender-narwhal H200, evil-cyan-lobster H200, unnecessary-peach-catfish B300) are the intended run target. The repo only stores a registry; **all downloads and conversions happen on the pod**.
+A cloud GPU/storage pod (Brev, RunPod, Lambda, or similar) is the intended run target. The repo only stores a registry; **all downloads and conversions happen on the pod**.
 
 ## Mount and clone
 

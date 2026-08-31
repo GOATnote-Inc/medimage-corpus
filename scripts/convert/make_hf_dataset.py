@@ -65,7 +65,7 @@ def main(in_dir: str, out_dir: str, features_config: str, shard_size: str) -> No
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
-    with open(features_config, "r", encoding="utf-8") as fh:
+    with open(features_config, encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh) or {}
 
     exts = cfg.get("extensions") or [".png", ".jpg", ".nii.gz", ".npy"]

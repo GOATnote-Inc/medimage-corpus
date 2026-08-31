@@ -106,7 +106,32 @@
       "items": { "type": "string" }
     },
     "us_view": {
-      "type": "string"
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        }
+      ],
+      "description": "Ultrasound view(s), e.g. A4C; a single string or a list."
+    },
+    "license_spdx": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "SPDX license identifier where one cleanly applies (e.g. CC-BY-NC-SA-4.0). Omitted when the terms are custom, mixed, or per-source."
+    },
+    "nc": {
+      "type": ["boolean", "null"],
+      "description": "True when the recorded terms restrict use to non-commercial / research-only; false when a permissive license clearly allows commercial use; absent or null when not determinable from the recorded terms. Derived from license text, not independently verified."
+    },
+    "num_subjects": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "checksums_url": {
+      "type": ["string", "null"],
+      "description": "URL of an upstream-published checksum listing (e.g. a SHA256SUMS file), when the source publishes one. Never fabricated; absent means no checksum source is recorded."
     },
     "image_modalities": {
       "type": "array",

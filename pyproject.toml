@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Registry, conversion, and download tooling for a medical imaging training corpus."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+license = { text = "MIT" }
 authors = [
     { name = "GOATnote", email = "b@thegoatnote.com" },
 ]

@@ -4,13 +4,13 @@ A registry of large open-source medical imaging datasets for training vision and
 
 ## What is in here
 
-- **134 datasets** cataloged across CT, X-ray, MRI, ultrasound, and image-text paired (VLM) collections.
+- **127 datasets** cataloged across CT, X-ray, MRI, ultrasound, and image-text paired (VLM) collections (each dataset has exactly one manifest row; earlier revisions double-listed 7 VLM datasets).
 - **~7.4 PB** of imaging data across all entries (heavily skewed by application-tier datasets — UK Biobank ~6 PB, OpenNeuro ~1 PB).
-- **~700 TB** of openly accessible or registration-tier data realistically pullable to a single pod over time.
-- One JSON Schema (`schemas/dataset.schema.json`) that every manifest line conforms to.
-- One dispatcher (`scripts/download/get.sh`) that routes to the right download tool by `download_method`.
+- **~1.2 PB** across open- and registration-tier entries (sum of declared sizes; dominated by OpenNeuro ~1 PB). What is realistically pullable depends on your disk and the per-dataset gates.
+- One JSON Schema (`schemas/dataset.schema.json`) that every manifest line conforms to; CI re-validates every push and pull request.
+- One dispatcher (`scripts/download/get.sh`) that routes to the right download tool by `download_method`, normalising manifest URLs into the shape each handler expects. Entries that require browser auth or an approved application exit with a clear error (code 3) instead of downloading the wrong thing.
 - Five conversion scripts: DICOM to NIfTI, NIfTI to WebDataset shards, DICOM to PNG, echo video to frames, and a HuggingFace dataset wrapper.
-- 134 markdown dataset cards under `docs/datasets/<modality>/<id>.md`.
+- 127 markdown dataset cards under `docs/datasets/<modality>/<id>.md`.
 
 ## Per-modality breakdown
 
@@ -20,7 +20,7 @@ A registry of large open-source medical imaging datasets for training vision and
 | X-ray             | 28    | 9.9 TB            | Largest: MIMIC-CXR 4.7 TB, PadChest 1 TB, EMBED ~1 TB                           |
 | MRI               | 35    | 7.28 PB           | Largest: UK Biobank ~6 PB (gated), OpenNeuro ~1 PB, ABCD 80 TB, HCP 80 TB       |
 | Ultrasound        | 23    | 144 GB            | Largest: EchoNet-LVH ~75 GB, ACOUSLIC-AI ~38 GB                                 |
-| Multimodal (VLM)  | 23    | 61.5 TB           | Largest: BIOMEDICA 27 TB, RadFM-MedMD 15 TB, CT-RATE 21.3 TB (also in CT)       |
+| Multimodal (VLM)  | 16    | 32.7 TB           | Largest: BIOMEDICA 27 TB. Image-text pairs for CT-RATE, MIMIC-CXR, PadChest, CheXpert Plus live on those datasets' own rows (`text_type`, `num_pairs`). |
 
 ## Repo layout
 
@@ -36,13 +36,13 @@ medimage-corpus/
 │   ├── xr.jsonl                    # 28 X-ray entries
 │   ├── mri.jsonl                   # 35 MRI entries
 │   ├── us.jsonl                    # 23 ultrasound entries
-│   ├── multimodal.jsonl            # 23 VLM-paired entries
-│   └── all.jsonl                   # Aggregated, sorted DESC by size_bytes
+│   ├── multimodal.jsonl            # 16 VLM-paired entries
+│   └── all.jsonl                   # Aggregated (derived; regenerate via aggregate.py)
 ├── docs/
 │   ├── ACCESS.md                   # Per-tier gating workflows
 │   ├── FORMATS.md                  # Native vs training formats, sharding strategies
-│   ├── DEPLOY_BREV.md              # How to run downloads on Brev pods
-│   └── datasets/<modality>/<id>.md # Per-dataset cards (134 total)
+│   ├── DEPLOY_BREV.md              # How to run downloads on GPU pods
+│   └── datasets/<modality>/<id>.md # Per-dataset cards (127 total)
 ├── scripts/
 │   ├── download/get.sh             # Dispatcher; routes by download_method
 │   ├── download/_https.sh          # curl wrapper
@@ -143,9 +143,9 @@ python3 scripts/convert/echo_video_to_frames.py \
 | Tier          | Count | Friction                                                                |
 |---------------|-------|-------------------------------------------------------------------------|
 | open          | 57    | Direct download.                                                        |
-| registration  | 47    | Account + EULA click-through (Stanford AIMI, NIH Box, Kaggle, HF gated) |
-| credentialed  | 13    | PhysioNet credentialed: CITI training + DUA. Approved in days.          |
-| application   | 17    | IRB / data access committee (UK Biobank, ADNI, ABCD, NLST). Weeks/mos.  |
+| registration  | 46    | Account + EULA click-through (Stanford AIMI, NIH Box, Kaggle, HF gated) |
+| credentialed  | 10    | PhysioNet credentialed: CITI training + DUA. Approved in days.          |
+| application   | 14    | IRB / data access committee (UK Biobank, ADNI, ABCD, NLST). Weeks/mos.  |
 
 ## Top 10 datasets by size
 
@@ -171,7 +171,20 @@ python3 scripts/manifest/validate.py manifests/all.jsonl
 python3 scripts/manifest/stats.py --by tier --top 20
 ```
 
-CI workflow at `.github/workflows/manifest-validate.yml` runs the same on push.
+CI (`.github/workflows/manifest-validate.yml`) runs aggregate + validate, checks that the committed `all.jsonl` matches the regenerated one, dry-runs the dispatcher over every id, and lints — on every push to main and every pull request.
+
+## Machine-readable license fields
+
+Each row records the license as free text (`license`) plus, where derivable:
+
+- `license_spdx` — SPDX identifier when one cleanly applies (e.g. `CC-BY-NC-SA-4.0`); absent/null for custom, mixed, or per-source terms.
+- `nc` — `true` when the recorded terms restrict use to non-commercial / research-only, `false` when a permissive license clearly allows commercial use, absent when not determinable. This is derived from the recorded license text, not independently verified — read the dataset card and the upstream terms before any commercial use.
+
+Currently 56 rows carry `nc: true`, 36 `nc: false`, and 35 make no claim.
+
+## Integrity: no checksums yet
+
+The manifests record **no checksums, content hashes, or version pins**, and the download handlers do not verify what they fetch — a pull mirrors whatever the upstream serves that day. The schema reserves a `checksums_url` field for upstreams that publish checksum listings (e.g. PhysioNet `SHA256SUMS.txt`); it is only populated when verified against the source, never fabricated. Until then, treat downloads as unverified and pin your own hashes after the first pull if you need reproducibility.
 
 ## How sizes were derived
 

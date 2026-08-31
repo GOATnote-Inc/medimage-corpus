@@ -16,10 +16,10 @@ This is a **registry repo** for medical imaging training datasets. It stores man
 - `README.md` — project summary, quick start, top-N tables.
 - `schemas/dataset.schema.json` — manifest contract (JSON Schema 2020-12).
 - `manifests/` — per-modality JSONL plus aggregated `all.jsonl`.
-- `docs/datasets/<modality>/<id>.md` — one card per dataset (134 total).
+- `docs/datasets/<modality>/<id>.md` — one card per dataset (127 total).
 - `docs/ACCESS.md` — gating workflows by tier (open / registration / credentialed / application).
 - `docs/FORMATS.md` — DICOM / NIfTI / WebDataset / HF parquet decision matrix.
-- `docs/DEPLOY_BREV.md` — running downloads on Brev pods (warm-lavender-narwhal H200 train, evil-cyan-lobster H200 judge, unnecessary-peach-catfish B300, prism-mla-h100).
+- `docs/DEPLOY_BREV.md` — running downloads on GPU pods.
 
 ## Common tasks
 
@@ -44,26 +44,19 @@ python3 scripts/manifest/stats.py --by size --top 20
 python3 scripts/manifest/stats.py --by year --top 20
 ```
 
-## Brev integration (recommended for actual downloads)
+## Pod integration (recommended for actual downloads)
 
-The user has direct-SSH access to Brev pods (no proxy, no PTY echo issue):
-
-- `warm-lavender-narwhal` (H200 train)
-- `evil-cyan-lobster` (H200 judge)
-- `unnecessary-peach-catfish` (B300)
-
-Run downloads on the pod, not on the laptop:
+Run downloads on a GPU/storage pod with direct SSH access, not on the laptop:
 
 ```bash
 # Sync the registry over
-rsync -av --exclude data --exclude _downloads /Users/kiteboard/medimage-corpus/ \
-  warm-lavender-narwhal:/workspace/medimage-corpus/
+rsync -av --exclude data --exclude _downloads ./ <pod>:/workspace/medimage-corpus/
 
 # Then on the pod:
-ssh warm-lavender-narwhal 'cd /workspace/medimage-corpus && bash scripts/download/get.sh ct/ct_rate --target /workspace/data/ct/ct_rate'
+ssh <pod> 'cd /workspace/medimage-corpus && bash scripts/download/get.sh ct/ct_rate --target /workspace/data/ct/ct_rate'
 ```
 
-Set credentials on the pod via the Brev console env-var UI, NOT by piping `.env` over SSH.
+Set credentials on the pod via the provider's env-var UI, NOT by piping `.env` over SSH.
 
 ## Don't
 
