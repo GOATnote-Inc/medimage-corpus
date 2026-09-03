@@ -1,5 +1,8 @@
 # medimage-corpus
 
+
+> **Maintenance status (2026-09):** passive. This repository is kept available as a reference implementation; CI runs on pushes and pull requests only, Dependabot security alerts remain enabled, and no scheduled jobs or hosted services consume ongoing resources. No active development is planned.
+
 A registry of large open-source medical imaging datasets for training vision and vision-language models. This repo holds the **manifests, dataset cards, download dispatchers, and format converters** — actual data downloads run on H100/H200 pods (or any storage host with enough disk and bandwidth).
 
 ## What is in here
